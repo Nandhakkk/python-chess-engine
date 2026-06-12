@@ -36,7 +36,7 @@ class Board:
         if self.turn == "black" and piece.isupper():
             print("It's Black's turn")
             return
-        if piece == "P":
+        if piece.lower() == "p":
 
             if not self.is_valid_pawn_move(
                 start_row,
@@ -55,18 +55,31 @@ class Board:
             self.turn = "white"
     def is_valid_pawn_move(self, start_row, start_col, end_row, end_col):
 
+        piece = self.board[start_row][start_col]
+
         if start_col != end_col:
             return False
 
-        # one-square move
-        if end_row == start_row - 1:
-            if self.board[end_row][end_col] == ".":
-                return True
+        # White pawn
+        if piece == "P":
 
-        # two-square move from starting position
-        if start_row == 6 and end_row == 4:
+            if end_row == start_row - 1:
+                if self.board[end_row][end_col] == ".":
+                    return True
 
-            if self.board[5][start_col] == "." and self.board[4][start_col] == ".":
-                return True
+            if start_row == 6 and end_row == 4:
+                if self.board[5][start_col] == "." and self.board[4][start_col] == ".":
+                    return True
+
+        # Black pawn
+        elif piece == "p":
+
+            if end_row == start_row + 1:
+                if self.board[end_row][end_col] == ".":
+                    return True
+
+            if start_row == 1 and end_row == 3:
+                if self.board[2][start_col] == "." and self.board[3][start_col] == ".":
+                    return True
 
         return False
