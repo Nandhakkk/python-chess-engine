@@ -29,7 +29,13 @@ class Board:
         if piece == ".":
             print("No piece at", start)
             return
+        if self.turn == "white" and piece.islower():
+            print("It's White's turn")
+            return
 
+        if self.turn == "black" and piece.isupper():
+            print("It's Black's turn")
+            return
         if piece == "P":
 
             if not self.is_valid_pawn_move(
