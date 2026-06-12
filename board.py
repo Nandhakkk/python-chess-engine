@@ -1,6 +1,7 @@
 from utils import chess_to_index
 class Board:
     def __init__(self):
+        self.turn = "white"
         self.board = [
             ["r","n","b","q","k","b","n","r"],
             ["p","p","p","p","p","p","p","p"],
@@ -13,6 +14,9 @@ class Board:
         ]
 
     def display(self):
+
+        print(f"\nTurn: {self.turn}\n")
+
         for row in self.board:
             print(" ".join(row))
     def move_piece(self, start, end):
@@ -39,6 +43,10 @@ class Board:
 
         self.board[end_row][end_col] = piece
         self.board[start_row][start_col] = "."
+        if self.turn == "white":
+            self.turn = "black"
+        else:
+            self.turn = "white"
     def is_valid_pawn_move(self, start_row, start_col, end_row, end_col):
 
         if start_col != end_col:
