@@ -46,7 +46,28 @@ class Board:
             ):
                 print("Invalid pawn move")
                 return
+        elif piece.lower() == "n":
 
+            if not self.is_valid_knight_move(
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            ):
+                print("Invalid knight move")
+                return
+
+        target = self.board[end_row][end_col]
+
+        if target != ".":
+
+            if piece.isupper() and target.isupper():
+                print("Cannot capture your own piece")
+                return
+
+            if piece.islower() and target.islower():
+                print("Cannot capture your own piece")
+                return    
         self.board[end_row][end_col] = piece
         self.board[start_row][start_col] = "."
         if self.turn == "white":
@@ -106,5 +127,15 @@ class Board:
 
                 if target != "." and target.isupper():
                     return True
+
+        return False
+    def is_valid_knight_move(self, start_row, start_col, end_row, end_col):
+
+        row_diff = abs(end_row - start_row)
+        col_diff = abs(end_col - start_col)
+
+        if (row_diff == 2 and col_diff == 1) or \
+        (row_diff == 1 and col_diff == 2):
+            return True
 
         return False
