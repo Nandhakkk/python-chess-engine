@@ -1,3 +1,7 @@
+from validators import (
+    is_valid_knight_move,
+    is_valid_pawn_move
+)
 from utils import chess_to_index
 class Board:
     def __init__(self):
@@ -38,7 +42,8 @@ class Board:
             return
         if piece.lower() == "p":
 
-            if not self.is_valid_pawn_move(
+           if not is_valid_pawn_move(
+                self.board,
                 start_row,
                 start_col,
                 end_row,
@@ -48,7 +53,7 @@ class Board:
                 return
         elif piece.lower() == "n":
 
-            if not self.is_valid_knight_move(
+            if not is_valid_knight_move(
                 start_row,
                 start_col,
                 end_row,
@@ -74,68 +79,4 @@ class Board:
             self.turn = "black"
         else:
             self.turn = "white"
-    def is_valid_pawn_move(self, start_row, start_col, end_row, end_col):
-
-        piece = self.board[start_row][start_col]
-
-        # White pawn
-        if piece == "P":
-
-            # Forward moves
-            if start_col == end_col:
-
-                if end_row == start_row - 1:
-                    if self.board[end_row][end_col] == ".":
-                        return True
-
-                if start_row == 6 and end_row == 4:
-                    if (
-                        self.board[5][start_col] == "."
-                        and self.board[4][start_col] == "."
-                    ):
-                        return True
-
-            # Capture diagonally
-            if end_row == start_row - 1 and abs(end_col - start_col) == 1:
-
-                target = self.board[end_row][end_col]
-
-                if target != "." and target.islower():
-                    return True
-
-        # Black pawn
-        elif piece == "p":
-
-            # Forward moves
-            if start_col == end_col:
-
-                if end_row == start_row + 1:
-                    if self.board[end_row][end_col] == ".":
-                        return True
-
-                if start_row == 1 and end_row == 3:
-                    if (
-                        self.board[2][start_col] == "."
-                        and self.board[3][start_col] == "."
-                    ):
-                        return True
-
-            # Capture diagonally
-            if end_row == start_row + 1 and abs(end_col - start_col) == 1:
-
-                target = self.board[end_row][end_col]
-
-                if target != "." and target.isupper():
-                    return True
-
-        return False
-    def is_valid_knight_move(self, start_row, start_col, end_row, end_col):
-
-        row_diff = abs(end_row - start_row)
-        col_diff = abs(end_col - start_col)
-
-        if (row_diff == 2 and col_diff == 1) or \
-        (row_diff == 1 and col_diff == 2):
-            return True
-
-        return False
+    
