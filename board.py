@@ -57,29 +57,54 @@ class Board:
 
         piece = self.board[start_row][start_col]
 
-        if start_col != end_col:
-            return False
-
         # White pawn
         if piece == "P":
 
-            if end_row == start_row - 1:
-                if self.board[end_row][end_col] == ".":
-                    return True
+            # Forward moves
+            if start_col == end_col:
 
-            if start_row == 6 and end_row == 4:
-                if self.board[5][start_col] == "." and self.board[4][start_col] == ".":
+                if end_row == start_row - 1:
+                    if self.board[end_row][end_col] == ".":
+                        return True
+
+                if start_row == 6 and end_row == 4:
+                    if (
+                        self.board[5][start_col] == "."
+                        and self.board[4][start_col] == "."
+                    ):
+                        return True
+
+            # Capture diagonally
+            if end_row == start_row - 1 and abs(end_col - start_col) == 1:
+
+                target = self.board[end_row][end_col]
+
+                if target != "." and target.islower():
                     return True
 
         # Black pawn
         elif piece == "p":
 
-            if end_row == start_row + 1:
-                if self.board[end_row][end_col] == ".":
-                    return True
+            # Forward moves
+            if start_col == end_col:
 
-            if start_row == 1 and end_row == 3:
-                if self.board[2][start_col] == "." and self.board[3][start_col] == ".":
+                if end_row == start_row + 1:
+                    if self.board[end_row][end_col] == ".":
+                        return True
+
+                if start_row == 1 and end_row == 3:
+                    if (
+                        self.board[2][start_col] == "."
+                        and self.board[3][start_col] == "."
+                    ):
+                        return True
+
+            # Capture diagonally
+            if end_row == start_row + 1 and abs(end_col - start_col) == 1:
+
+                target = self.board[end_row][end_col]
+
+                if target != "." and target.isupper():
                     return True
 
         return False
