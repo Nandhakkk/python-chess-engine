@@ -212,6 +212,22 @@ def attacks_square(
 
     piece = board[start_row][start_col]
 
+    if piece == "P":
+
+        if (
+            target_row == start_row - 1
+            and abs(target_col - start_col) == 1
+        ):
+            return True
+        
+    if piece == "p":
+
+        if (
+            target_row == start_row + 1
+            and abs(target_col - start_col) == 1
+        ):
+            return True
+
     if piece.lower() == "n":
         return is_valid_knight_move(
             start_row,
