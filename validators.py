@@ -314,3 +314,7 @@ def is_in_check(board, color):
                     return True
 
     return False
+
+def copy_board(board):
+
+    return [row[:] for row in board]

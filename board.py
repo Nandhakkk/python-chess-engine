@@ -7,7 +7,8 @@ from validators import (
     is_valid_rook_move,
     is_valid_queen_move,
     is_valid_king_move,
-    is_in_check
+    is_in_check,
+    copy_board
 )
 
 
@@ -37,6 +38,24 @@ class Board:
 
         print("  a b c d e f g h")
 
+    def would_leave_king_in_check(
+    self,
+    start_row,
+    start_col,
+    end_row,
+    end_col
+):
+
+        temp_board = copy_board(self.board)
+
+        piece = temp_board[start_row][start_col]
+
+        temp_board[end_row][end_col] = piece
+        temp_board[start_row][start_col] = "."
+
+        color = "white" if piece.isupper() else "black"
+
+        return is_in_check(temp_board, color)
     def move_piece(self, start, end):
 
         start_row, start_col = chess_to_index(start)
@@ -137,7 +156,14 @@ class Board:
             ):
                 print("Invalid king move")
                 return
-
+        if self.would_leave_king_in_check(
+            start_row,
+            start_col,
+            end_row,
+            end_col
+        ):
+            print("Illegal move: king would remain in check")
+            return
         self.board[end_row][end_col] = piece
         self.board[start_row][start_col] = "."
         
