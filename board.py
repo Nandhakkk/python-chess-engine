@@ -1,7 +1,8 @@
 from validators import (
-    is_valid_knight_move,
     is_valid_pawn_move,
-    is_valid_bishop_move
+    is_valid_knight_move,
+    is_valid_bishop_move,
+    is_valid_rook_move
 )
 from utils import chess_to_index
 class Board:
@@ -72,6 +73,17 @@ class Board:
                 end_col
             ):
                 print("Invalid bishop move")
+                return
+        elif piece.lower() == "r":
+
+            if not is_valid_rook_move(
+                self.board,
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            ):
+                print("Invalid rook move")
                 return
         target = self.board[end_row][end_col]
 

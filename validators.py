@@ -95,3 +95,44 @@ def is_valid_bishop_move(
         current_col += col_step
 
     return True
+def is_valid_rook_move(
+    board,
+    start_row,
+    start_col,
+    end_row,
+    end_col
+):
+
+    # Must move in a straight line
+    if start_row != end_row and start_col != end_col:
+        return False
+
+    # Vertical movement
+    if start_col == end_col:
+
+        step = 1 if end_row > start_row else -1
+
+        current_row = start_row + step
+
+        while current_row != end_row:
+
+            if board[current_row][start_col] != ".":
+                return False
+
+            current_row += step
+
+    # Horizontal movement
+    if start_row == end_row:
+
+        step = 1 if end_col > start_col else -1
+
+        current_col = start_col + step
+
+        while current_col != end_col:
+
+            if board[start_row][current_col] != ".":
+                return False
+
+            current_col += step
+
+    return True
