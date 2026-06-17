@@ -1,4 +1,9 @@
-def is_valid_knight_move(start_row, start_col, end_row, end_col):
+def is_valid_knight_move(
+    start_row,
+    start_col,
+    end_row,
+    end_col
+):
 
     row_diff = abs(end_row - start_row)
     col_diff = abs(end_col - start_col)
@@ -8,6 +13,7 @@ def is_valid_knight_move(start_row, start_col, end_row, end_col):
         or
         (row_diff == 1 and col_diff == 2)
     )
+
 
 def is_valid_pawn_move(
     board,
@@ -35,7 +41,10 @@ def is_valid_pawn_move(
                 ):
                     return True
 
-        if end_row == start_row - 1 and abs(end_col - start_col) == 1:
+        if (
+            end_row == start_row - 1
+            and abs(end_col - start_col) == 1
+        ):
 
             target = board[end_row][end_col]
 
@@ -58,7 +67,10 @@ def is_valid_pawn_move(
                 ):
                     return True
 
-        if end_row == start_row + 1 and abs(end_col - start_col) == 1:
+        if (
+            end_row == start_row + 1
+            and abs(end_col - start_col) == 1
+        ):
 
             target = board[end_row][end_col]
 
@@ -66,6 +78,8 @@ def is_valid_pawn_move(
                 return True
 
     return False
+
+
 def is_valid_bishop_move(
     board,
     start_row,
@@ -95,6 +109,8 @@ def is_valid_bishop_move(
         current_col += col_step
 
     return True
+
+
 def is_valid_rook_move(
     board,
     start_row,
@@ -103,11 +119,9 @@ def is_valid_rook_move(
     end_col
 ):
 
-    # Must move in a straight line
     if start_row != end_row and start_col != end_col:
         return False
 
-    # Vertical movement
     if start_col == end_col:
 
         step = 1 if end_row > start_row else -1
@@ -121,7 +135,6 @@ def is_valid_rook_move(
 
             current_row += step
 
-    # Horizontal movement
     if start_row == end_row:
 
         step = 1 if end_col > start_col else -1
@@ -136,6 +149,8 @@ def is_valid_rook_move(
             current_col += step
 
     return True
+
+
 def is_valid_queen_move(
     board,
     start_row,
@@ -161,6 +176,8 @@ def is_valid_queen_move(
             end_col
         )
     )
+
+
 def is_valid_king_move(
     start_row,
     start_col,
@@ -172,3 +189,112 @@ def is_valid_king_move(
     col_diff = abs(end_col - start_col)
 
     return row_diff <= 1 and col_diff <= 1
+
+
+def find_king(board, color):
+
+    king = "K" if color == "white" else "k"
+
+    for row in range(8):
+        for col in range(8):
+
+            if board[row][col] == king:
+                return row, col
+
+    return None
+def attacks_square(
+    board,
+    start_row,
+    start_col,
+    target_row,
+    target_col
+):
+
+    piece = board[start_row][start_col]
+
+    if piece.lower() == "n":
+        return is_valid_knight_move(
+            start_row,
+            start_col,
+            target_row,
+            target_col
+        )
+
+    elif piece.lower() == "b":
+        return is_valid_bishop_move(
+            board,
+            start_row,
+            start_col,
+            target_row,
+            target_col
+        )
+
+    elif piece.lower() == "r":
+        return is_valid_rook_move(
+            board,
+            start_row,
+            start_col,
+            target_row,
+            target_col
+        )
+
+    elif piece.lower() == "q":
+        return is_valid_queen_move(
+            board,
+            start_row,
+            start_col,
+            target_row,
+            target_col
+        )
+
+    elif piece.lower() == "k":
+        return is_valid_king_move(
+            start_row,
+            start_col,
+            target_row,
+            target_col
+        )
+
+    return False
+def is_in_check(board, color):
+
+    king_pos = find_king(board, color)
+
+    if king_pos is None:
+        return False
+
+    king_row, king_col = king_pos
+
+    enemy_is_white = (color == "black")
+
+    for row in range(8):
+        for col in range(8):
+
+            piece = board[row][col]
+
+            if piece == ".":
+                continue
+
+            if enemy_is_white and piece.isupper():
+
+                if attacks_square(
+                    board,
+                    row,
+                    col,
+                    king_row,
+                    king_col
+                ):
+                    return True
+
+            elif not enemy_is_white and piece.islower():
+
+                if attacks_square(
+                    board,
+                    row,
+                    col,
+                    king_row,
+                    king_col
+                ):
+                    return True
+
+    return False

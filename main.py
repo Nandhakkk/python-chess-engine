@@ -3,13 +3,19 @@ from board import Board
 board = Board()
 
 while True:
+
     board.display()
 
-    move = input("Enter move (example: e2 e4): ").strip()
+    move = input(
+        "Enter move (example: e2 e4): "
+    ).strip()
 
     if not move:
         print("Please enter a move")
         continue
+
+    if move.lower() == "quit":
+        break
 
     parts = move.split()
 
@@ -19,6 +25,9 @@ while True:
 
     start, end = parts
 
-    board.move_piece(start, end)
+    try:
+        board.move_piece(start, end)
+    except Exception as e:
+        print("Error:", e)
 
     print()
