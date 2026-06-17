@@ -66,3 +66,32 @@ def is_valid_pawn_move(
                 return True
 
     return False
+def is_valid_bishop_move(
+    board,
+    start_row,
+    start_col,
+    end_row,
+    end_col
+):
+
+    row_diff = abs(end_row - start_row)
+    col_diff = abs(end_col - start_col)
+
+    if row_diff != col_diff:
+        return False
+
+    row_step = 1 if end_row > start_row else -1
+    col_step = 1 if end_col > start_col else -1
+
+    current_row = start_row + row_step
+    current_col = start_col + col_step
+
+    while current_row != end_row:
+
+        if board[current_row][current_col] != ".":
+            return False
+
+        current_row += row_step
+        current_col += col_step
+
+    return True

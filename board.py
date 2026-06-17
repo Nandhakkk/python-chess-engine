@@ -1,6 +1,7 @@
 from validators import (
     is_valid_knight_move,
-    is_valid_pawn_move
+    is_valid_pawn_move,
+    is_valid_bishop_move
 )
 from utils import chess_to_index
 class Board:
@@ -61,7 +62,17 @@ class Board:
             ):
                 print("Invalid knight move")
                 return
+        elif piece.lower() == "b":
 
+            if not is_valid_bishop_move(
+                self.board,
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            ):
+                print("Invalid bishop move")
+                return
         target = self.board[end_row][end_col]
 
         if target != ".":
