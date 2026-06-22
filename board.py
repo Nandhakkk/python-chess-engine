@@ -43,8 +43,7 @@ class Board:
     start_row,
     start_col,
     end_row,
-    end_col
-):
+    end_col):
 
         temp_board = copy_board(self.board)
 
@@ -56,6 +55,117 @@ class Board:
         color = "white" if piece.isupper() else "black"
 
         return is_in_check(temp_board, color)
+    
+    def is_valid_move_for_piece(
+    self,
+    piece,
+    start_row,
+    start_col,
+    end_row,
+    end_col):
+
+        if piece.lower() == "p":
+            return is_valid_pawn_move(
+                self.board,
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            )
+
+        elif piece.lower() == "n":
+            return is_valid_knight_move(
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            )
+
+        elif piece.lower() == "b":
+            return is_valid_bishop_move(
+                self.board,
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            )
+
+        elif piece.lower() == "r":
+            return is_valid_rook_move(
+                self.board,
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            )
+
+        elif piece.lower() == "q":
+            return is_valid_queen_move(
+                self.board,
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            )
+
+        elif piece.lower() == "k":
+            return is_valid_king_move(
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            )
+
+        return False
+    
+    def has_any_legal_move(self, color):
+
+        for start_row in range(8):
+            for start_col in range(8):
+
+                piece = self.board[start_row][start_col]
+
+                if piece == ".":
+                    continue
+
+                if color == "white" and piece.islower():
+                    continue
+
+                if color == "black" and piece.isupper():
+                    continue
+
+                for end_row in range(8):
+                    for end_col in range(8):
+
+                        target = self.board[end_row][end_col]
+
+                        # Don't capture own piece
+                        if target != ".":
+
+                            if piece.isupper() and target.isupper():
+                                continue
+
+                            if piece.islower() and target.islower():
+                                continue
+
+                        if not self.is_valid_move_for_piece(
+                            piece,
+                            start_row,
+                            start_col,
+                            end_row,
+                            end_col
+                        ):
+                            continue
+
+                        if not self.would_leave_king_in_check(
+                            start_row,
+                            start_col,
+                            end_row,
+                            end_col
+                        ):
+                            return True
+
+        return False
     def move_piece(self, start, end):
 
         start_row, start_col = chess_to_index(start)
@@ -173,4 +283,12 @@ class Board:
             self.turn = "white"
 
         if is_in_check(self.board, self.turn):
-            print(f"{self.turn.capitalize()} is in Check!")
+
+            if not self.has_any_legal_move(self.turn):
+                print(f"Checkmate! {'White' if self.turn == 'black' else 'Black'} wins!")
+                exit()
+
+            else:
+                print(f"{self.turn.capitalize()} is in Check!")
+
+        
