@@ -276,7 +276,16 @@ class Board:
             return
         self.board[end_row][end_col] = piece
         self.board[start_row][start_col] = "."
-        
+        # White pawn promotion
+        if piece == "P" and end_row == 0:
+            self.board[end_row][end_col] = "Q"
+            print("White pawn promoted to Queen!")
+
+        # Black pawn promotion
+        if piece == "p" and end_row == 7:
+            self.board[end_row][end_col] = "q"
+            print("Black pawn promoted to Queen!")
+            
         if self.turn == "white":
             self.turn = "black"
         else:
