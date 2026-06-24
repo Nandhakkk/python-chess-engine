@@ -396,4 +396,10 @@ class Board:
             else:
                 print(f"{self.turn.capitalize()} is in Check!")
 
+        else:
+
+            if not self.has_any_legal_move(self.turn):
+                print("Stalemate! Draw!")
+                exit()
+
         
