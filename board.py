@@ -265,7 +265,40 @@ class Board:
                 return
 
         elif piece.lower() == "k":
+            # Black kingside castling
+            if (
+                piece == "k"
+                and start_row == 0
+                and start_col == 4
+                and end_row == 0
+                and end_col == 6
+            ):
 
+                if self.black_king_moved:
+                    print("King already moved")
+                    return
+
+                if self.black_rook_h_moved:
+                    print("Rook already moved")
+                    return
+
+                if self.board[0][5] != "." or self.board[0][6] != ".":
+                    print("Path blocked")
+                    return
+
+                self.board[0][6] = "k"
+                self.board[0][5] = "r"
+
+                self.board[0][4] = "."
+                self.board[0][7] = "."
+
+                self.black_king_moved = True
+                self.black_rook_h_moved = True
+
+                print("Black castled kingside!")
+
+                self.turn = "white"
+                return
             # White kingside castling
             if (
                 piece == "K"
