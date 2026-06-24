@@ -28,7 +28,14 @@ class Board:
             ["P","P","P","P","P","P","P","P"],
             ["R","N","B","Q","K","B","N","R"]
         ]
+        self.white_king_moved = False
+        self.black_king_moved = False
 
+        self.white_rook_a_moved = False
+        self.white_rook_h_moved = False
+
+        self.black_rook_a_moved = False
+        self.black_rook_h_moved = False
     def display(self):
 
         print(f"\nTurn: {self.turn}\n")
@@ -136,7 +143,8 @@ class Board:
 
                 for end_row in range(8):
                     for end_col in range(8):
-
+                        if start_row == end_row and start_col == end_col:
+                            continue
                         target = self.board[end_row][end_col]
 
                         # Don't capture own piece
@@ -285,7 +293,27 @@ class Board:
         if piece == "p" and end_row == 7:
             self.board[end_row][end_col] = "q"
             print("Black pawn promoted to Queen!")
-            
+        if piece == "K":
+            self.white_king_moved = True
+
+        elif piece == "k":
+            self.black_king_moved = True
+
+        elif piece == "R":
+
+            if start_row == 7 and start_col == 0:
+                self.white_rook_a_moved = True
+
+            elif start_row == 7 and start_col == 7:
+                self.white_rook_h_moved = True
+
+        elif piece == "r":
+
+            if start_row == 0 and start_col == 0:
+                self.black_rook_a_moved = True
+
+            elif start_row == 0 and start_col == 7:
+                self.black_rook_h_moved = True
         if self.turn == "white":
             self.turn = "black"
         else:
