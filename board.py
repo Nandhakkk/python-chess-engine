@@ -370,6 +370,44 @@ class Board:
 
                 self.turn = "black"
                 return
+            # Black queenside castling
+            if (
+                piece == "k"
+                and start_row == 0
+                and start_col == 4
+                and end_row == 0
+                and end_col == 2
+            ):
+
+                if self.black_king_moved:
+                    print("King already moved")
+                    return
+
+                if self.black_rook_a_moved:
+                    print("Rook already moved")
+                    return
+
+                if (
+                    self.board[0][1] != "."
+                    or self.board[0][2] != "."
+                    or self.board[0][3] != "."
+                ):
+                    print("Path blocked")
+                    return
+
+                self.board[0][2] = "k"
+                self.board[0][3] = "r"
+
+                self.board[0][4] = "."
+                self.board[0][0] = "."
+
+                self.black_king_moved = True
+                self.black_rook_a_moved = True
+
+                print("Black castled queenside!")
+
+                self.turn = "white"
+                return
             # Normal king move
             if not is_valid_king_move(
                 start_row,
