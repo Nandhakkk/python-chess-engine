@@ -36,6 +36,7 @@ class Board:
 
         self.black_rook_a_moved = False
         self.black_rook_h_moved = False
+        self.en_passant_target = None
     def display(self):
 
         print(f"\nTurn: {self.turn}\n")
@@ -77,7 +78,8 @@ class Board:
                 start_row,
                 start_col,
                 end_row,
-                end_col
+                end_col,
+                self.en_passant_target
             )
 
         elif piece.lower() == "n":
@@ -212,7 +214,8 @@ class Board:
                 start_row,
                 start_col,
                 end_row,
-                end_col
+                end_col,
+                self.en_passant_target
             ):
                 print("Invalid pawn move")
                 return
@@ -426,8 +429,35 @@ class Board:
         ):
             print("Illegal move: king would remain in check")
             return
+        
+        # Reset en passant target
+        self.en_passant_target = None
+
         self.board[end_row][end_col] = piece
         self.board[start_row][start_col] = "."
+
+        # En passant capture
+        if (
+            piece == "P"
+            and start_col != end_col
+            and target == "."
+        ):
+            self.board[end_row + 1][end_col] = "."
+
+        elif (
+            piece == "p"
+            and start_col != end_col
+            and target == "."
+        ):
+            self.board[end_row - 1][end_col] = "."
+        # White pawn moved two squares
+        if piece == "P" and start_row == 6 and end_row == 4:
+            self.en_passant_target = (5, start_col)
+
+        # Black pawn moved two squares
+        elif piece == "p" and start_row == 1 and end_row == 3:
+            self.en_passant_target = (2, start_col)
+
         # White pawn promotion
         if piece == "P" and end_row == 0:
             self.board[end_row][end_col] = "Q"

@@ -20,7 +20,8 @@ def is_valid_pawn_move(
     start_row,
     start_col,
     end_row,
-    end_col
+    end_col,
+    en_passant_target
 ):
 
     piece = board[start_row][start_col]
@@ -41,14 +42,16 @@ def is_valid_pawn_move(
                 ):
                     return True
 
-        if (
-            end_row == start_row - 1
-            and abs(end_col - start_col) == 1
-        ):
+        if end_row == start_row - 1 and abs(end_col - start_col) == 1:
 
             target = board[end_row][end_col]
 
+            # Normal capture
             if target != "." and target.islower():
+                return True
+
+            # En passant
+            if en_passant_target == (end_row, end_col):
                 return True
 
     # Black pawn
@@ -67,14 +70,16 @@ def is_valid_pawn_move(
                 ):
                     return True
 
-        if (
-            end_row == start_row + 1
-            and abs(end_col - start_col) == 1
-        ):
+        if end_row == start_row + 1 and abs(end_col - start_col) == 1:
 
             target = board[end_row][end_col]
 
+            # Normal capture
             if target != "." and target.isupper():
+                return True
+
+            # En passant
+            if en_passant_target == (end_row, end_col):
                 return True
 
     return False
