@@ -323,3 +323,10 @@ def is_in_check(board, color):
 def copy_board(board):
 
     return [row[:] for row in board]
+
+from copy import deepcopy
+
+
+def copy_board_obj(board_obj):
+
+    return deepcopy(board_obj)
