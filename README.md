@@ -1,30 +1,49 @@
-# Python Chess Engine
+# ♟ Python Chess Engine
 
-A chess engine written from scratch in pure Python.
+A command-line chess engine written in Python featuring complete chess rules and an AI opponent powered by the Minimax algorithm.
 
 ## Features
 
-- Pawn movement and captures
-- Knight movement
-- Bishop movement
-- Rook movement
-- Queen movement
-- King movement
-- Turn management
+- Complete chess rules
+- Legal move generation
 - Check detection
 - Checkmate detection
+- Stalemate detection
+- Castling
+- En passant
+- Pawn promotion
+- Human vs AI gameplay
+- Minimax AI
+- Board evaluation function
 
-## Example
+## Technologies
 
-```text
-e2 e4
-e7 e5
-g1 f3
+- Python 3
+- Object-Oriented Programming
+- Minimax Algorithm
+
+## Project Structure
+
+```
+main.py
+board.py
+ai.py
+evaluation.py
+validators.py
+utils.py
 ```
 
-## Future Features
+## Run
 
-- Pawn Promotion
-- Castling
-- En Passant
-- AI Opponent
+```bash
+python main.py
+```
+
+## Future Improvements
+
+- Alpha-Beta Pruning
+- Piece-Square Tables
+- Move Ordering
+- Opening Book
+- Transposition Table
+- GUI
