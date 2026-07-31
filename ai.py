@@ -55,6 +55,68 @@ def minimax(board_obj, depth, maximizing_player):
 
         return best_score
 
+def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
+
+    if depth == 0:
+        return evaluate_board(board_obj.board)
+
+    color = "white" if maximizing_player else "black"
+
+    legal_moves = generate_legal_moves(board_obj, color)
+
+    if not legal_moves:
+        return evaluate_board(board_obj.board)
+
+    if maximizing_player:
+
+        value = float("-inf")
+
+        for start, end in legal_moves:
+
+            temp = copy_board_obj(board_obj)
+            temp.move_piece(start, end, silent=True)
+
+            score = alphabeta(
+                temp,
+                depth - 1,
+                alpha,
+                beta,
+                False
+            )
+
+            value = max(value, score)
+            alpha = max(alpha, value)
+
+            if alpha >= beta:
+                break
+
+        return value
+
+    else:
+
+        value = float("inf")
+
+        for start, end in legal_moves:
+
+            temp = copy_board_obj(board_obj)
+            temp.move_piece(start, end, silent=True)
+
+            score = alphabeta(
+                temp,
+                depth - 1,
+                alpha,
+                beta,
+                True
+            )
+
+            value = min(value, score)
+            beta = min(beta, value)
+
+            if beta <= alpha:
+                break
+
+        return value
+
 def generate_legal_moves(board_obj, color):
 
     legal_moves = []
@@ -119,7 +181,7 @@ def generate_legal_moves(board_obj, color):
 
     return legal_moves
 
-def choose_best_move(board_obj, color):
+def choose_best_move(board_obj, color, depth=3):
 
     legal_moves = generate_legal_moves(board_obj, color)
 
@@ -137,14 +199,15 @@ def choose_best_move(board_obj, color):
             temp = copy_board_obj(board_obj)
             temp.move_piece(start, end, silent=True)
 
-            score = minimax(
+            score = alphabeta(
                 temp,
-                1,
+                depth - 1,
+                float("-inf"),
+                float("inf"),
                 False
             )
 
             if score > best_score:
-
                 best_score = score
                 best_move = (start, end)
 
@@ -157,14 +220,15 @@ def choose_best_move(board_obj, color):
             temp = copy_board_obj(board_obj)
             temp.move_piece(start, end, silent=True)
 
-            score = minimax(
+            score = alphabeta(
                 temp,
-                1,
+                depth - 1,
+                float("-inf"),
+                float("inf"),
                 True
             )
 
             if score < best_score:
-
                 best_score = score
                 best_move = (start, end)
 

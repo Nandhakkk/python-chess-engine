@@ -56,7 +56,7 @@ while True:
 
         print("\nAI is thinking...")
 
-        best = choose_best_move(board, "black")
+        best = choose_best_move(board, "black", depth=3)
 
         if best is None:
             print("AI has no legal moves.")
