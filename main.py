@@ -1,6 +1,7 @@
 from board import Board
 from ai import choose_best_move
-
+import time
+import ai
 board = Board()
 
 print("===================================")
@@ -56,13 +57,25 @@ while True:
 
         print("\nAI is thinking...")
 
-        best = choose_best_move(board, "black", depth=3)
+        ai.nodes_searched = 0
 
-        if best is None:
+        start_time = time.time()
+
+        best_move = choose_best_move(
+            board,
+            "black",
+            depth=3
+        )
+
+        end_time = time.time()
+
+        print("Nodes searched:", ai.nodes_searched)
+        print(f"Search time: {end_time - start_time:.3f} seconds")
+        if best_move is None:
             print("AI has no legal moves.")
             break
 
-        start, end = best
+        start, end = best_move
 
         print(f"AI plays: {start} {end}")
 

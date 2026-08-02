@@ -3,7 +3,7 @@ from utils import index_to_chess
 from evaluation import evaluate_board
 from validators import copy_board_obj
 
-
+nodes_searched = 0
 def minimax(board_obj, depth, maximizing_player):
 
     # Base case
@@ -55,14 +55,75 @@ def minimax(board_obj, depth, maximizing_player):
 
         return best_score
 
-def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
+def order_moves(board_obj, moves):
+    """
+    Order moves using MVV-LVA.
 
+    MVV-LVA:
+    Most Valuable Victim - Least Valuable Attacker
+
+    Capturing valuable pieces with cheaper pieces
+    gets searched first.
+    """
+
+    piece_values = {
+        "p": 100,
+        "n": 320,
+        "b": 330,
+        "r": 500,
+        "q": 900,
+        "k": 20000,
+    }
+
+    scored_moves = []
+
+    for start, end in moves:
+
+        start_row = 8 - int(start[1])
+        start_col = ord(start[0]) - ord("a")
+
+        end_row = 8 - int(end[1])
+        end_col = ord(end[0]) - ord("a")
+
+        attacker = board_obj.board[start_row][start_col]
+        victim = board_obj.board[end_row][end_col]
+
+        score = 0
+
+        # Capture
+        if victim != ".":
+            victim_value = piece_values[victim.lower()]
+            attacker_value = piece_values[attacker.lower()]
+
+            score = (
+                10 * victim_value
+                - attacker_value
+            )
+
+        scored_moves.append(
+            (score, (start, end))
+        )
+
+    scored_moves.sort(
+        key=lambda item: item[0],
+        reverse=True
+    )
+
+    return [
+        move
+        for score, move in scored_moves
+    ]
+def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
+    global nodes_searched
+    nodes_searched += 1 
     if depth == 0:
         return evaluate_board(board_obj.board)
 
     color = "white" if maximizing_player else "black"
 
     legal_moves = generate_legal_moves(board_obj, color)
+
+    legal_moves = order_moves(board_obj, legal_moves)
 
     if not legal_moves:
         return evaluate_board(board_obj.board)
