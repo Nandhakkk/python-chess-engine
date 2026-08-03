@@ -113,12 +113,159 @@ def order_moves(board_obj, moves):
         move
         for score, move in scored_moves
     ]
+
+def quiescence(
+    board_obj,
+    alpha,
+    beta,
+    maximizing_player,
+    q_depth=4
+):
+    """
+    Continue searching tactical capture moves after
+    the normal search depth reaches zero.
+
+    This helps reduce the horizon effect.
+    """
+
+    global nodes_searched
+    nodes_searched += 1
+
+    stand_pat = evaluate_board(board_obj.board)
+    # Prevent quiescence search from becoming too deep
+    if q_depth == 0:
+        return stand_pat
+    # White is maximizing
+    if maximizing_player:
+
+        if stand_pat >= beta:
+            return beta
+
+        if stand_pat > alpha:
+            alpha = stand_pat
+
+    # Black is minimizing
+    else:
+
+        if stand_pat <= alpha:
+            return alpha
+
+        if stand_pat < beta:
+            beta = stand_pat
+
+    color = "white" if maximizing_player else "black"
+
+    legal_moves = generate_legal_moves(
+        board_obj,
+        color
+    )
+
+    # Keep useful captures only
+    capture_moves = []
+
+    piece_values = {
+        "p": 100,
+        "n": 320,
+        "b": 330,
+        "r": 500,
+        "q": 900,
+        "k": 20000,
+    }
+
+    for start, end in legal_moves:
+
+        start_row = 8 - int(start[1])
+        start_col = ord(start[0]) - ord("a")
+
+        end_row = 8 - int(end[1])
+        end_col = ord(end[0]) - ord("a")
+
+        attacker = board_obj.board[start_row][start_col]
+        victim = board_obj.board[end_row][end_col]
+
+        if victim == ".":
+            continue
+
+        attacker_value = piece_values[attacker.lower()]
+        victim_value = piece_values[victim.lower()]
+
+        # Search captures where the victim is at least
+        # as valuable as the attacking piece.
+        if victim_value >= attacker_value:
+            capture_moves.append((start, end))
+
+    # Search valuable captures first
+    capture_moves = order_moves(
+        board_obj,
+        capture_moves
+    )
+
+    if maximizing_player:
+
+        for start, end in capture_moves:
+
+            temp = copy_board_obj(board_obj)
+
+            temp.move_piece(
+                start,
+                end,
+                silent=True
+            )
+
+            score = quiescence(
+                temp,
+                alpha,
+                beta,
+                False,
+                q_depth - 1
+            )
+
+            if score >= beta:
+                return beta
+
+            if score > alpha:
+                alpha = score
+
+        return alpha
+
+    else:
+
+        for start, end in capture_moves:
+
+            temp = copy_board_obj(board_obj)
+
+            temp.move_piece(
+                start,
+                end,
+                silent=True
+            )
+
+            score = quiescence(
+                temp,
+                alpha,
+                beta,
+                True,
+                q_depth - 1
+            )
+
+            if score <= alpha:
+                return alpha
+
+            if score < beta:
+                beta = score
+
+        return beta
+
 def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
     global nodes_searched
     nodes_searched += 1 
     if depth == 0:
-        return evaluate_board(board_obj.board)
-
+        return quiescence(
+            board_obj,
+            alpha,
+            beta,
+            maximizing_player
+        )
     color = "white" if maximizing_player else "black"
 
     legal_moves = generate_legal_moves(board_obj, color)
