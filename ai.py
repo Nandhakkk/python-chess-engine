@@ -4,6 +4,8 @@ from evaluation import evaluate_board
 from validators import copy_board_obj
 
 nodes_searched = 0
+transposition_table = {}
+tt_hits = 0
 def minimax(board_obj, depth, maximizing_player):
 
     # Base case
@@ -256,9 +258,48 @@ def quiescence(
 
         return beta
 
+def get_position_key(board_obj, maximizing_player):
+    """
+    Create a hashable key representing the current position.
+
+    This is a simple implementation.
+    Later we can replace it with Zobrist hashing.
+    """
+
+    board_key = tuple(
+        tuple(row)
+        for row in board_obj.board
+    )
+
+    return (
+        board_key,
+        maximizing_player
+    )
+
 def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
+
     global nodes_searched
-    nodes_searched += 1 
+    global tt_hits
+
+    nodes_searched += 1
+
+    # Create a unique key for this position
+    key = get_position_key(
+        board_obj,
+        maximizing_player
+    )
+
+    # Check transposition table
+    if key in transposition_table:
+
+        stored_depth, stored_score = transposition_table[key]
+
+        # Only reuse results searched at least
+        # as deeply as the current request
+        if stored_depth >= depth:
+            tt_hits += 1
+            return stored_score
+
     if depth == 0:
         return quiescence(
             board_obj,
@@ -278,7 +319,7 @@ def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
     if maximizing_player:
 
         value = float("-inf")
-
+        cutoff = False
         for start, end in legal_moves:
 
             temp = copy_board_obj(board_obj)
@@ -298,12 +339,17 @@ def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
             if alpha >= beta:
                 break
 
+        transposition_table[key] = (
+            depth,
+            value
+        )
+
         return value
 
     else:
 
         value = float("inf")
-
+        cutoff = False
         for start, end in legal_moves:
 
             temp = copy_board_obj(board_obj)
@@ -322,6 +368,11 @@ def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
 
             if beta <= alpha:
                 break
+
+        transposition_table[key] = (
+            depth,
+            value
+        )
 
         return value
 

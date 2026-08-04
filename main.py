@@ -59,6 +59,9 @@ while True:
 
         ai.nodes_searched = 0
 
+        ai.tt_hits = 0
+        ai.transposition_table.clear()
+
         start_time = time.time()
 
         best_move = choose_best_move(
@@ -70,6 +73,8 @@ while True:
         end_time = time.time()
 
         print("Nodes searched:", ai.nodes_searched)
+        print("TT hits:", ai.tt_hits)
+        print("TT entries:", len(ai.transposition_table))
         print(f"Search time: {end_time - start_time:.3f} seconds")
         if best_move is None:
             print("AI has no legal moves.")
