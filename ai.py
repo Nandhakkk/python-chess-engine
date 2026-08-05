@@ -2,6 +2,7 @@ from utils import index_to_chess
 
 from evaluation import evaluate_board
 from validators import copy_board_obj
+from zobrist import compute_zobrist_hash
 
 nodes_searched = 0
 transposition_table = {}
@@ -260,19 +261,14 @@ def quiescence(
 
 def get_position_key(board_obj, maximizing_player):
     """
-    Create a hashable key representing the current position.
-
-    This is a simple implementation.
-    Later we can replace it with Zobrist hashing.
+    Create a compact position key using
+    64-bit Zobrist hashing.
     """
 
-    board_key = tuple(
-        tuple(row)
-        for row in board_obj.board
-    )
+    zobrist_hash = compute_zobrist_hash(board_obj)
 
     return (
-        board_key,
+        zobrist_hash,
         maximizing_player
     )
 
