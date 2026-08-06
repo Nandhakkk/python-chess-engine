@@ -191,6 +191,49 @@ class Board:
                         return True
 
         return False
+
+    def can_castle_through(
+        self,
+        color,
+        squares
+    ):
+        """
+        Return False if the king is currently in check
+        or would pass through an attacked square.
+        """
+
+        king = "K" if color == "white" else "k"
+
+        # Starting king position
+        start_row = 7 if color == "white" else 0
+        start_col = 4
+
+        # King cannot castle while already in check
+        if is_in_check(self.board, color):
+            return False
+
+        for end_col in squares:
+
+            original_target = self.board[start_row][end_col]
+
+            # Temporarily move king
+            self.board[start_row][start_col] = "."
+            self.board[start_row][end_col] = king
+
+            attacked = is_in_check(
+                self.board,
+                color
+            )
+
+            # Restore board
+            self.board[start_row][end_col] = original_target
+            self.board[start_row][start_col] = king
+
+            if attacked:
+                return False
+
+        return True
+
     def move_piece(self, start, end, silent=False):
 
         start_row, start_col = chess_to_index(start)
@@ -230,13 +273,24 @@ class Board:
                     print("Cannot capture your own piece")
                 return False
 
+        # Detect castling attempt
+        is_castling = (
+            piece.lower() == "k"
+            and start_row == end_row
+            and start_col == 4
+            and end_col in (2, 6)
+        )
+
         # Piece movement validation
-        if not self.is_valid_move_for_piece(
-            piece,
-            start_row,
-            start_col,
-            end_row,
-            end_col
+        if (
+            not is_castling
+            and not self.is_valid_move_for_piece(
+                piece,
+                start_row,
+                start_col,
+                end_row,
+                end_col
+            )
         ):
             if not silent:
 
@@ -282,10 +336,20 @@ class Board:
                 if not silent:
                     print("Rook already moved")
                 return False
-
+            # Rook must actually exist on h1
+            if self.board[7][7] != "R":
+                if not silent:
+                    print("Kingside rook is missing")
+                return False
             if self.board[7][5] != "." or self.board[7][6] != ".":
                 if not silent:
                     print("Path blocked")
+                return False
+
+            # King cannot castle out of, through, or into check
+            if not self.can_castle_through("white", [5, 6]):
+                if not silent:
+                    print("Cannot castle through check")
                 return False
 
             self.board[7][6] = "K"
@@ -323,6 +387,12 @@ class Board:
                     print("Rook already moved")
                 return False
 
+            # Rook must actually exist on a1
+            if self.board[7][0] != "R":
+                if not silent:
+                    print("Queenside rook is missing")
+                return False
+
             if (
                 self.board[7][1] != "."
                 or self.board[7][2] != "."
@@ -330,6 +400,11 @@ class Board:
             ):
                 if not silent:
                     print("Path blocked")
+                return False
+
+            if not self.can_castle_through("white", [3, 2]):
+                if not silent:
+                    print("Cannot castle through check")
                 return False
 
             self.board[7][2] = "K"
@@ -347,53 +422,114 @@ class Board:
                 print("White castled queenside!")
 
             return True
-            # Black queenside castling
-            if (
-                piece == "k"
-                and start_row == 0
-                and start_col == 4
-                and end_row == 0
-                and end_col == 2
-            ):
 
-                if self.black_king_moved:
+        # ---------- BLACK KINGSIDE CASTLING ----------
+        if (
+            piece == "k"
+            and start_row == 0
+            and start_col == 4
+            and end_row == 0
+            and end_col == 6
+        ):
+
+            if self.black_king_moved:
+                if not silent:
                     print("King already moved")
-                    return
+                return False
 
-                if self.black_rook_a_moved:
+            if self.black_rook_h_moved:
+                if not silent:
                     print("Rook already moved")
-                    return
+                return False
 
-                if (
-                    self.board[0][1] != "."
-                    or self.board[0][2] != "."
-                    or self.board[0][3] != "."
-                ):
+            # Rook must actually exist on h8
+            if self.board[0][7] != "r":
+                if not silent:
+                    print("Kingside rook is missing")
+                return False
+
+
+            if self.board[0][5] != "." or self.board[0][6] != ".":
+                if not silent:
                     print("Path blocked")
-                    return
+                return False
 
-                self.board[0][2] = "k"
-                self.board[0][3] = "r"
+            if not self.can_castle_through("black", [5, 6]):
+                if not silent:
+                    print("Cannot castle through check")
+                return False
 
-                self.board[0][4] = "."
-                self.board[0][0] = "."
+            self.board[0][6] = "k"
+            self.board[0][5] = "r"
 
-                self.black_king_moved = True
-                self.black_rook_a_moved = True
+            self.board[0][4] = "."
+            self.board[0][7] = "."
 
+            self.black_king_moved = True
+            self.black_rook_h_moved = True
+
+            self.turn = "white"
+
+            if not silent:
+                print("Black castled kingside!")
+
+            return True  
+
+        # ---------- BLACK QUEENSIDE CASTLING ----------
+        if (
+            piece == "k"
+            and start_row == 0
+            and start_col == 4
+            and end_row == 0
+            and end_col == 2
+        ):
+
+            if self.black_king_moved:
+                if not silent:
+                    print("King already moved")
+                return False
+
+            if self.black_rook_a_moved:
+                if not silent:
+                    print("Rook already moved")
+                return False
+
+
+            # Rook must actually exist on a8
+            if self.board[0][0] != "r":
+                if not silent:
+                    print("Queenside rook is missing")
+                return False
+
+            if (
+                self.board[0][1] != "."
+                or self.board[0][2] != "."
+                or self.board[0][3] != "."
+            ):
+                if not silent:
+                    print("Path blocked")
+                return False
+
+            if not self.can_castle_through("black", [3, 2]):
+                if not silent:
+                    print("Cannot castle through check")
+                return False
+            
+            self.board[0][2] = "k"
+            self.board[0][3] = "r"
+
+            self.board[0][4] = "."
+            self.board[0][0] = "."
+
+            self.black_king_moved = True
+            self.black_rook_a_moved = True
+
+            self.turn = "white"
+
+            if not silent:
                 print("Black castled queenside!")
 
-                self.turn = "white"
-                return
-            # Normal king move
-            if not is_valid_king_move(
-                start_row,
-                start_col,
-                end_row,
-                end_col
-            ):
-                print("Invalid king move")
-                return
+            return True
             
         if self.would_leave_king_in_check(
             start_row,
@@ -406,6 +542,27 @@ class Board:
         
         # Reset en passant target
         self.en_passant_target = None
+
+        # ---------------------------------
+        # Update castling rights if a rook
+        # is captured on its starting square
+        # ---------------------------------
+
+        # White queenside rook captured on a1
+        if target == "R" and end_row == 7 and end_col == 0:
+            self.white_rook_a_moved = True
+
+        # White kingside rook captured on h1
+        elif target == "R" and end_row == 7 and end_col == 7:
+            self.white_rook_h_moved = True
+
+        # Black queenside rook captured on a8
+        elif target == "r" and end_row == 0 and end_col == 0:
+            self.black_rook_a_moved = True
+
+        # Black kingside rook captured on h8
+        elif target == "r" and end_row == 0 and end_col == 7:
+            self.black_rook_h_moved = True
 
         self.board[end_row][end_col] = piece
         self.board[start_row][start_col] = "."
@@ -432,15 +589,19 @@ class Board:
         elif piece == "p" and start_row == 1 and end_row == 3:
             self.en_passant_target = (2, start_col)
 
-        # White pawn promotion
+       # White pawn promotion
         if piece == "P" and end_row == 0:
             self.board[end_row][end_col] = "Q"
-            print("White pawn promoted to Queen!")
+
+            if not silent:
+                print("White pawn promoted to Queen!")
 
         # Black pawn promotion
         if piece == "p" and end_row == 7:
             self.board[end_row][end_col] = "q"
-            print("Black pawn promoted to Queen!")
+
+            if not silent:
+                print("Black pawn promoted to Queen!")
         if piece == "K":
             self.white_king_moved = True
 
