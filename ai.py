@@ -445,46 +445,79 @@ def choose_best_move(board_obj, color, depth=3):
 
     best_move = None
 
-    if color == "white":
+    # Iterative deepening
+    for current_depth in range(1, depth + 1):
 
-        best_score = float("-inf")
+        print(f"Searching depth {current_depth}...")
 
-        for start, end in legal_moves:
+        current_best_move = None
 
-            temp = copy_board_obj(board_obj)
-            temp.move_piece(start, end, silent=True)
+        if color == "white":
 
-            score = alphabeta(
-                temp,
-                depth - 1,
-                float("-inf"),
-                float("inf"),
-                False
-            )
+            best_score = float("-inf")
 
-            if score > best_score:
-                best_score = score
-                best_move = (start, end)
+            for start, end in legal_moves:
 
-    else:
+                temp = copy_board_obj(board_obj)
 
-        best_score = float("inf")
+                temp.move_piece(
+                    start,
+                    end,
+                    silent=True
+                )
 
-        for start, end in legal_moves:
+                score = alphabeta(
+                    temp,
+                    current_depth - 1,
+                    float("-inf"),
+                    float("inf"),
+                    False
+                )
 
-            temp = copy_board_obj(board_obj)
-            temp.move_piece(start, end, silent=True)
+                if score > best_score:
+                    best_score = score
+                    current_best_move = (
+                        start,
+                        end
+                    )
 
-            score = alphabeta(
-                temp,
-                depth - 1,
-                float("-inf"),
-                float("inf"),
-                True
-            )
+        else:
 
-            if score < best_score:
-                best_score = score
-                best_move = (start, end)
+            best_score = float("inf")
+
+            for start, end in legal_moves:
+
+                temp = copy_board_obj(board_obj)
+
+                temp.move_piece(
+                    start,
+                    end,
+                    silent=True
+                )
+
+                score = alphabeta(
+                    temp,
+                    current_depth - 1,
+                    float("-inf"),
+                    float("inf"),
+                    True
+                )
+
+                if score < best_score:
+                    best_score = score
+                    current_best_move = (
+                        start,
+                        end
+                    )
+
+        # Only replace the previous result
+        # after completing the entire depth.
+        if current_best_move is not None:
+            best_move = current_best_move
+
+        print(
+            f"Depth {current_depth}: "
+            f"{best_move}"
+        )
 
     return best_move
