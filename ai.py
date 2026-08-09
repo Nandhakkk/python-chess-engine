@@ -7,6 +7,13 @@ from zobrist import compute_zobrist_hash
 nodes_searched = 0
 transposition_table = {}
 tt_hits = 0
+
+killer_moves = {}
+history_scores = {}
+
+TT_EXACT = 0
+TT_LOWERBOUND = 1
+TT_UPPERBOUND = 2
 def minimax(board_obj, depth, maximizing_player):
 
     # Base case
@@ -60,13 +67,10 @@ def minimax(board_obj, depth, maximizing_player):
 
 def order_moves(board_obj, moves):
     """
-    Order moves using MVV-LVA.
+    Order moves using:
 
-    MVV-LVA:
-    Most Valuable Victim - Least Valuable Attacker
-
-    Capturing valuable pieces with cheaper pieces
-    gets searched first.
+    1. Captures → MVV-LVA
+    2. Quiet moves → History Heuristic
     """
 
     piece_values = {
@@ -93,14 +97,34 @@ def order_moves(board_obj, moves):
 
         score = 0
 
-        # Capture
+        # -------------------------
+        # Capture: MVV-LVA
+        # -------------------------
+
         if victim != ".":
-            victim_value = piece_values[victim.lower()]
-            attacker_value = piece_values[attacker.lower()]
+
+            victim_value = (
+                piece_values[victim.lower()]
+            )
+
+            attacker_value = (
+                piece_values[attacker.lower()]
+            )
 
             score = (
                 10 * victim_value
                 - attacker_value
+            )
+
+        # -------------------------
+        # Quiet move: History
+        # -------------------------
+
+        else:
+
+            score = history_scores.get(
+                (start, end),
+                0
             )
 
         scored_moves.append(
@@ -272,54 +296,188 @@ def get_position_key(board_obj, maximizing_player):
         maximizing_player
     )
 
-def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
+
+def get_ordered_moves_with_killers(
+    board_obj,
+    legal_moves,
+    depth,
+    tt_move=None
+):
+    """
+    Order moves using:
+
+    1. TT best move
+    2. Killer moves
+    3. MVV-LVA / History Heuristic
+    """
+
+    moves = order_moves(
+        board_obj,
+        legal_moves
+    )
+
+    # -------------------------
+    # TT best move
+    # -------------------------
+
+    if tt_move is not None and tt_move in moves:
+
+        moves.remove(tt_move)
+        moves.insert(0, tt_move)
+
+    # -------------------------
+    # Killer moves
+    # -------------------------
+
+    killers = killer_moves.get(
+        depth,
+        []
+    )
+
+    for killer in reversed(killers):
+
+        if killer in moves:
+
+            moves.remove(killer)
+            moves.insert(0, killer)
+
+    # Make sure TT move remains first
+    if tt_move is not None and tt_move in moves:
+
+        moves.remove(tt_move)
+        moves.insert(0, tt_move)
+
+    return moves
+def alphabeta(
+    board_obj,
+    depth,
+    alpha,
+    beta,
+    maximizing_player
+):
 
     global nodes_searched
     global tt_hits
 
     nodes_searched += 1
 
-    # Create a unique key for this position
+    # Save original alpha/beta
+    original_alpha = alpha
+    original_beta = beta
+
+    # -------------------------
+    # Position key
+    # -------------------------
+
     key = get_position_key(
         board_obj,
         maximizing_player
     )
 
-    # Check transposition table
+    # -------------------------
+    # Transposition Table lookup
+    # -------------------------
+    tt_move = None
     if key in transposition_table:
 
-        stored_depth, stored_score = transposition_table[key]
+        (
+            stored_depth,
+            stored_score,
+            stored_flag,
+            stored_best_move
+        ) = transposition_table[key]
 
-        # Only reuse results searched at least
-        # as deeply as the current request
         if stored_depth >= depth:
-            tt_hits += 1
-            return stored_score
+
+            if stored_flag == TT_EXACT:
+
+                tt_hits += 1
+                return stored_score
+
+            elif stored_flag == TT_LOWERBOUND:
+
+                alpha = max(
+                    alpha,
+                    stored_score
+                )
+
+            elif stored_flag == TT_UPPERBOUND:
+
+                beta = min(
+                    beta,
+                    stored_score
+                )
+
+            # Bound caused a cutoff
+            if alpha >= beta:
+
+                tt_hits += 1
+                return stored_score
+
+    # -------------------------
+    # Quiescence search
+    # -------------------------
 
     if depth == 0:
+
         return quiescence(
             board_obj,
             alpha,
             beta,
             maximizing_player
         )
-    color = "white" if maximizing_player else "black"
 
-    legal_moves = generate_legal_moves(board_obj, color)
+    # -------------------------
+    # Generate legal moves
+    # -------------------------
 
-    legal_moves = order_moves(board_obj, legal_moves)
+    color = (
+        "white"
+        if maximizing_player
+        else "black"
+    )
+
+    legal_moves = generate_legal_moves(
+        board_obj,
+        color
+    )
 
     if not legal_moves:
-        return evaluate_board(board_obj.board)
+
+        return evaluate_board(
+            board_obj.board
+        )
+
+    # -------------------------
+    # Move ordering
+    # -------------------------
+
+    legal_moves = get_ordered_moves_with_killers(
+        board_obj,
+        legal_moves,
+        depth,
+        tt_move
+    )
+
+    # -------------------------
+    # Maximizing player
+    # -------------------------
 
     if maximizing_player:
 
         value = float("-inf")
-        cutoff = False
+        best_move = None
         for start, end in legal_moves:
 
-            temp = copy_board_obj(board_obj)
-            temp.move_piece(start, end, silent=True)
+            temp = copy_board_obj(
+                board_obj
+            )
+
+            temp.move_piece(
+                start,
+                end,
+                silent=True
+            )
 
             score = alphabeta(
                 temp,
@@ -329,27 +487,74 @@ def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
                 False
             )
 
-            value = max(value, score)
-            alpha = max(alpha, value)
+            value = max(
+                value,
+                score
+            )
 
+            alpha = max(
+                alpha,
+                value
+            )
+
+            # Beta cutoff
             if alpha >= beta:
+
+                # Killer move
+                move = (
+                    start,
+                    end
+                )
+
+                if move not in killer_moves.get(
+                    depth,
+                    []
+                ):
+
+                    killer_moves.setdefault(
+                        depth,
+                        []
+                    ).insert(
+                        0,
+                        move
+                    )
+
+                    killer_moves[depth] = (
+                        killer_moves[depth][:2]
+                    )
+
+                # History heuristic
+                history_scores[
+                    move
+                ] = (
+                    history_scores.get(
+                        move,
+                        0
+                    )
+                    + depth * depth
+                )
+
                 break
 
-        transposition_table[key] = (
-            depth,
-            value
-        )
-
-        return value
+    # -------------------------
+    # Minimizing player
+    # -------------------------
 
     else:
 
         value = float("inf")
-        cutoff = False
+        best_move = None
         for start, end in legal_moves:
 
-            temp = copy_board_obj(board_obj)
-            temp.move_piece(start, end, silent=True)
+            temp = copy_board_obj(
+                board_obj
+            )
+
+            temp.move_piece(
+                start,
+                end,
+                silent=True
+            )
 
             score = alphabeta(
                 temp,
@@ -359,18 +564,83 @@ def alphabeta(board_obj, depth, alpha, beta, maximizing_player):
                 True
             )
 
-            value = min(value, score)
-            beta = min(beta, value)
+            value = min(
+                value,
+                score
+            )
 
+            beta = min(
+                beta,
+                value
+            )
+
+            # Alpha cutoff
             if beta <= alpha:
+
+                # Killer move
+                move = (
+                    start,
+                    end
+                )
+
+                if move not in killer_moves.get(
+                    depth,
+                    []
+                ):
+
+                    killer_moves.setdefault(
+                        depth,
+                        []
+                    ).insert(
+                        0,
+                        move
+                    )
+
+                    killer_moves[depth] = (
+                        killer_moves[depth][:2]
+                    )
+
+                # History heuristic
+                history_scores[
+                    move
+                ] = (
+                    history_scores.get(
+                        move,
+                        0
+                    )
+                    + depth * depth
+                )
+
                 break
 
-        transposition_table[key] = (
-            depth,
-            value
-        )
+    # -------------------------
+    # Determine TT flag
+    # -------------------------
 
-        return value
+    if value <= original_alpha:
+
+        flag = TT_UPPERBOUND
+
+    elif value >= original_beta:
+
+        flag = TT_LOWERBOUND
+
+    else:
+
+        flag = TT_EXACT
+
+    # -------------------------
+    # Store in TT
+    # -------------------------
+
+    transposition_table[key] = (
+        depth,
+        value,
+        flag,
+        best_move
+    )
+
+    return value
 
 def generate_legal_moves(board_obj, color):
 
@@ -452,11 +722,19 @@ def choose_best_move(board_obj, color, depth=3):
 
         current_best_move = None
 
+        # Try the best move from the previous
+        # iteration first.
+        ordered_moves = legal_moves.copy()
+
+        if best_move is not None and best_move in ordered_moves:
+            ordered_moves.remove(best_move)
+            ordered_moves.insert(0, best_move)
+
         if color == "white":
 
             best_score = float("-inf")
 
-            for start, end in legal_moves:
+            for start, end in ordered_moves:
 
                 temp = copy_board_obj(board_obj)
 
@@ -485,7 +763,7 @@ def choose_best_move(board_obj, color, depth=3):
 
             best_score = float("inf")
 
-            for start, end in legal_moves:
+            for start, end in ordered_moves:
 
                 temp = copy_board_obj(board_obj)
 
