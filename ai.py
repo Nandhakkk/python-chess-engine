@@ -3,7 +3,7 @@ from utils import index_to_chess
 from evaluation import evaluate_board
 from validators import copy_board_obj
 from zobrist import compute_zobrist_hash
-
+import time
 nodes_searched = 0
 transposition_table = {}
 tt_hits = 0
@@ -14,6 +14,10 @@ history_scores = {}
 TT_EXACT = 0
 TT_LOWERBOUND = 1
 TT_UPPERBOUND = 2
+
+class SearchTimeout(Exception):
+    pass
+
 def minimax(board_obj, depth, maximizing_player):
 
     # Base case
@@ -359,9 +363,15 @@ def alphabeta(
     global nodes_searched
     global tt_hits
 
+    if time.time() >= search_deadline:
+        raise SearchTimeout
+
     nodes_searched += 1
 
+    # -------------------------
     # Save original alpha/beta
+    # -------------------------
+
     original_alpha = alpha
     original_beta = beta
 
@@ -377,7 +387,9 @@ def alphabeta(
     # -------------------------
     # Transposition Table lookup
     # -------------------------
+
     tt_move = None
+
     if key in transposition_table:
 
         (
@@ -387,11 +399,18 @@ def alphabeta(
             stored_best_move
         ) = transposition_table[key]
 
+        # Always retrieve the stored best move
+        if stored_best_move is not None:
+            tt_move = stored_best_move
+
+        # Use stored score only if
+        # searched deeply enough
         if stored_depth >= depth:
 
             if stored_flag == TT_EXACT:
 
                 tt_hits += 1
+
                 return stored_score
 
             elif stored_flag == TT_LOWERBOUND:
@@ -412,6 +431,7 @@ def alphabeta(
             if alpha >= beta:
 
                 tt_hits += 1
+
                 return stored_score
 
     # -------------------------
@@ -467,6 +487,7 @@ def alphabeta(
 
         value = float("-inf")
         best_move = None
+
         for start, end in legal_moves:
 
             temp = copy_board_obj(
@@ -487,25 +508,33 @@ def alphabeta(
                 False
             )
 
-            value = max(
-                value,
-                score
-            )
+            # Found a better move
+            if score > value:
+
+                value = score
+
+                best_move = (
+                    start,
+                    end
+                )
 
             alpha = max(
                 alpha,
                 value
             )
 
+            # -------------------------
             # Beta cutoff
+            # -------------------------
+
             if alpha >= beta:
 
-                # Killer move
                 move = (
                     start,
                     end
                 )
 
+                # Killer move
                 if move not in killer_moves.get(
                     depth,
                     []
@@ -544,6 +573,7 @@ def alphabeta(
 
         value = float("inf")
         best_move = None
+
         for start, end in legal_moves:
 
             temp = copy_board_obj(
@@ -564,25 +594,33 @@ def alphabeta(
                 True
             )
 
-            value = min(
-                value,
-                score
-            )
+            # Found a better move
+            if score < value:
+
+                value = score
+
+                best_move = (
+                    start,
+                    end
+                )
 
             beta = min(
                 beta,
                 value
             )
 
+            # -------------------------
             # Alpha cutoff
+            # -------------------------
+
             if beta <= alpha:
 
-                # Killer move
                 move = (
                     start,
                     end
                 )
 
+                # Killer move
                 if move not in killer_moves.get(
                     depth,
                     []
@@ -706,92 +744,186 @@ def generate_legal_moves(board_obj, color):
 
     return legal_moves
 
-def choose_best_move(board_obj, color, depth=3):
+def choose_best_move(
+    board_obj,
+    color,
+    depth=3,
+    time_limit=5.0
+):
 
-    legal_moves = generate_legal_moves(board_obj, color)
+    global nodes_searched
+    global search_deadline
+
+    legal_moves = generate_legal_moves(
+        board_obj,
+        color
+    )
 
     if not legal_moves:
         return None
 
-    best_move = None
+    # -------------------------
+    # Search setup
+    # -------------------------
 
+    best_move = legal_moves[0]
+
+    depth_nodes = {}
+
+    # Set search deadline
+    search_deadline = (
+        time.time() + time_limit
+    )
+
+    # -------------------------
     # Iterative deepening
-    for current_depth in range(1, depth + 1):
+    # -------------------------
 
-        print(f"Searching depth {current_depth}...")
+    for current_depth in range(
+        1,
+        depth + 1
+    ):
+
+        print(
+            f"Searching depth "
+            f"{current_depth}..."
+        )
+
+        nodes_before = nodes_searched
 
         current_best_move = None
 
-        # Try the best move from the previous
-        # iteration first.
-        ordered_moves = legal_moves.copy()
+        try:
 
-        if best_move is not None and best_move in ordered_moves:
-            ordered_moves.remove(best_move)
-            ordered_moves.insert(0, best_move)
+            # -------------------------
+            # Root move ordering
+            # -------------------------
 
-        if color == "white":
+            ordered_moves = (
+                legal_moves.copy()
+            )
 
-            best_score = float("-inf")
+            # Previous iteration's best
+            # move goes first.
+            if (
+                best_move is not None
+                and best_move in ordered_moves
+            ):
 
-            for start, end in ordered_moves:
-
-                temp = copy_board_obj(board_obj)
-
-                temp.move_piece(
-                    start,
-                    end,
-                    silent=True
+                ordered_moves.remove(
+                    best_move
                 )
 
-                score = alphabeta(
-                    temp,
-                    current_depth - 1,
-                    float("-inf"),
-                    float("inf"),
-                    False
+                ordered_moves.insert(
+                    0,
+                    best_move
                 )
 
-                if score > best_score:
-                    best_score = score
-                    current_best_move = (
-                        start,
-                        end
+            # -------------------------
+            # Search current depth
+            # -------------------------
+
+            if color == "white":
+
+                best_score = float("-inf")
+
+                for start, end in ordered_moves:
+
+                    temp = copy_board_obj(
+                        board_obj
                     )
 
-        else:
-
-            best_score = float("inf")
-
-            for start, end in ordered_moves:
-
-                temp = copy_board_obj(board_obj)
-
-                temp.move_piece(
-                    start,
-                    end,
-                    silent=True
-                )
-
-                score = alphabeta(
-                    temp,
-                    current_depth - 1,
-                    float("-inf"),
-                    float("inf"),
-                    True
-                )
-
-                if score < best_score:
-                    best_score = score
-                    current_best_move = (
+                    temp.move_piece(
                         start,
-                        end
+                        end,
+                        silent=True
                     )
 
-        # Only replace the previous result
-        # after completing the entire depth.
+                    score = alphabeta(
+                        temp,
+                        current_depth - 1,
+                        float("-inf"),
+                        float("inf"),
+                        False
+                    )
+
+                    if score > best_score:
+
+                        best_score = score
+
+                        current_best_move = (
+                            start,
+                            end
+                        )
+
+            else:
+
+                best_score = float("inf")
+
+                for start, end in ordered_moves:
+
+                    temp = copy_board_obj(
+                        board_obj
+                    )
+
+                    temp.move_piece(
+                        start,
+                        end,
+                        silent=True
+                    )
+
+                    score = alphabeta(
+                        temp,
+                        current_depth - 1,
+                        float("-inf"),
+                        float("inf"),
+                        True
+                    )
+
+                    if score < best_score:
+
+                        best_score = score
+
+                        current_best_move = (
+                            start,
+                            end
+                        )
+
+        except SearchTimeout:
+
+            print(
+                f"Time limit reached "
+                f"during depth {current_depth}."
+            )
+
+            break
+
+        # -------------------------
+        # Completed depth
+        # -------------------------
+
+        nodes_for_depth = (
+            nodes_searched
+            - nodes_before
+        )
+
+        depth_nodes[
+            current_depth
+        ] = nodes_for_depth
+
+        print(
+            f"Depth {current_depth} nodes: "
+            f"{nodes_for_depth}"
+        )
+
+        # IMPORTANT:
+        # Only accept a move from a
+        # completely finished depth.
         if current_best_move is not None:
-            best_move = current_best_move
+
+            best_move = (
+                current_best_move
+            )
 
         print(
             f"Depth {current_depth}: "
