@@ -22,14 +22,14 @@ def minimax(board_obj, depth, maximizing_player):
 
     # Base case
     if depth == 0:
-        return evaluate_board(board_obj.board)
+        return evaluate_board(board_obj)
 
     color = "white" if maximizing_player else "black"
 
     legal_moves = generate_legal_moves(board_obj, color)
 
     if not legal_moves:
-        return evaluate_board(board_obj.board)
+        return evaluate_board(board_obj)
 
     if maximizing_player:
 
@@ -162,7 +162,7 @@ def quiescence(
     global nodes_searched
     nodes_searched += 1
 
-    stand_pat = evaluate_board(board_obj.board)
+    stand_pat = evaluate_board(board_obj)
     # Prevent quiescence search from becoming too deep
     if q_depth == 0:
         return stand_pat
@@ -465,7 +465,7 @@ def alphabeta(
     if not legal_moves:
 
         return evaluate_board(
-            board_obj.board
+            board_obj
         )
 
     # -------------------------

@@ -30,7 +30,244 @@ piece_values = {
 }
 
 
-def evaluate_board(board):
+def get_piece_mobility(board_obj, color):
+
+    board = board_obj.board
+
+    mobility = {
+        "p": 0,
+        "n": 0,
+        "b": 0,
+        "r": 0,
+        "q": 0,
+        "k": 0,
+    }
+
+    for row in range(8):
+        for col in range(8):
+
+            piece = board[row][col]
+
+            if piece == ".":
+                continue
+
+            if color == "white" and piece.islower():
+                continue
+
+            if color == "black" and piece.isupper():
+                continue
+
+            piece_type = piece.lower()
+
+            # Reuse the optimized move-generation logic
+            # from your current mobility function.
+
+            if piece_type == "p":
+
+                direction = -1 if piece == "P" else 1
+                new_row = row + direction
+
+                if 0 <= new_row < 8:
+
+                    if board[new_row][col] == ".":
+                        mobility["p"] += 1
+
+                        starting_row = (
+                            6 if piece == "P" else 1
+                        )
+
+                        if row == starting_row:
+
+                            two_row = row + 2 * direction
+
+                            if (
+                                0 <= two_row < 8
+                                and board[two_row][col] == "."
+                            ):
+                                mobility["p"] += 1
+
+                    for dc in (-1, 1):
+
+                        new_col = col + dc
+
+                        if not (
+                            0 <= new_col < 8
+                            and 0 <= new_row < 8
+                        ):
+                            continue
+
+                        target = board[
+                            new_row
+                        ][
+                            new_col
+                        ]
+
+                        if target != ".":
+
+                            if (
+                                piece == "P"
+                                and target.islower()
+                            ):
+                                mobility["p"] += 1
+
+                            elif (
+                                piece == "p"
+                                and target.isupper()
+                            ):
+                                mobility["p"] += 1
+
+                        elif (
+                            board_obj.en_passant_target
+                            == (new_row, new_col)
+                        ):
+                            mobility["p"] += 1
+
+            elif piece_type == "n":
+
+                offsets = [
+                    (-2, -1), (-2, 1),
+                    (-1, -2), (-1, 2),
+                    (1, -2), (1, 2),
+                    (2, -1), (2, 1),
+                ]
+
+                for dr, dc in offsets:
+
+                    new_row = row + dr
+                    new_col = col + dc
+
+                    if not (
+                        0 <= new_row < 8
+                        and 0 <= new_col < 8
+                    ):
+                        continue
+
+                    target = board[
+                        new_row
+                    ][
+                        new_col
+                    ]
+
+                    if target == ".":
+                        mobility["n"] += 1
+
+                    elif (
+                        piece.isupper()
+                        and target.islower()
+                    ):
+                        mobility["n"] += 1
+
+                    elif (
+                        piece.islower()
+                        and target.isupper()
+                    ):
+                        mobility["n"] += 1
+
+            elif piece_type in ("b", "r", "q"):
+
+                if piece_type == "b":
+                    directions = [
+                        (-1, -1), (-1, 1),
+                        (1, -1), (1, 1),
+                    ]
+
+                elif piece_type == "r":
+                    directions = [
+                        (-1, 0), (1, 0),
+                        (0, -1), (0, 1),
+                    ]
+
+                else:
+                    directions = [
+                        (-1, -1), (-1, 1),
+                        (1, -1), (1, 1),
+                        (-1, 0), (1, 0),
+                        (0, -1), (0, 1),
+                    ]
+
+                for dr, dc in directions:
+
+                    new_row = row + dr
+                    new_col = col + dc
+
+                    while (
+                        0 <= new_row < 8
+                        and 0 <= new_col < 8
+                    ):
+
+                        target = board[
+                            new_row
+                        ][
+                            new_col
+                        ]
+
+                        if target == ".":
+                            mobility[piece_type] += 1
+
+                        else:
+
+                            if (
+                                piece.isupper()
+                                and target.islower()
+                            ):
+                                mobility[piece_type] += 1
+
+                            elif (
+                                piece.islower()
+                                and target.isupper()
+                            ):
+                                mobility[piece_type] += 1
+
+                            break
+
+                        new_row += dr
+                        new_col += dc
+
+            elif piece_type == "k":
+
+                offsets = [
+                    (-1, -1), (-1, 0), (-1, 1),
+                    (0, -1),           (0, 1),
+                    (1, -1),  (1, 0),  (1, 1),
+                ]
+
+                for dr, dc in offsets:
+
+                    new_row = row + dr
+                    new_col = col + dc
+
+                    if not (
+                        0 <= new_row < 8
+                        and 0 <= new_col < 8
+                    ):
+                        continue
+
+                    target = board[
+                        new_row
+                    ][
+                        new_col
+                    ]
+
+                    if target == ".":
+                        mobility["k"] += 1
+
+                    elif (
+                        piece.isupper()
+                        and target.islower()
+                    ):
+                        mobility["k"] += 1
+
+                    elif (
+                        piece.islower()
+                        and target.isupper()
+                    ):
+                        mobility["k"] += 1
+
+    return mobility
+
+def evaluate_board(board_obj):
+
+    board = board_obj.board
 
     score = 0
 
@@ -104,5 +341,44 @@ def evaluate_board(board):
 
             elif piece == "k":
                 score -= BLACK_KING_TABLE[row][col]
+
+    # ==========================
+    # MOBILITY
+    # ==========================
+
+    white_mobility = get_piece_mobility(
+        board_obj,
+        "white"
+    )
+
+    black_mobility = get_piece_mobility(
+        board_obj,
+        "black"
+    )
+
+    mobility_weights = {
+        "p": 1,
+        "n": 4,
+        "b": 4,
+        "r": 2,
+        "q": 1,
+        "k": 1,
+    }
+
+    mobility_score = 0
+
+    for piece_type, weight in mobility_weights.items():
+
+        mobility_score += (
+            white_mobility[piece_type]
+            * weight
+        )
+
+        mobility_score -= (
+            black_mobility[piece_type]
+            * weight
+        )
+
+    score += mobility_score
 
     return score
