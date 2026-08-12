@@ -265,6 +265,157 @@ def get_piece_mobility(board_obj, color):
 
     return mobility
 
+
+def evaluate_pawn_structure(board_obj):
+
+    board = board_obj.board
+    score = 0
+
+    # ==========================
+    # Pawn files
+    # ==========================
+
+    white_pawn_files = [0] * 8
+    black_pawn_files = [0] * 8
+
+    for row in range(8):
+        for col in range(8):
+
+            piece = board[row][col]
+
+            if piece == "P":
+                white_pawn_files[col] += 1
+
+            elif piece == "p":
+                black_pawn_files[col] += 1
+
+    # ==========================
+    # Doubled pawns
+    # ==========================
+
+    for col in range(8):
+
+        if white_pawn_files[col] > 1:
+            extra = white_pawn_files[col] - 1
+            score -= 10 * extra
+
+        if black_pawn_files[col] > 1:
+            extra = black_pawn_files[col] - 1
+            score += 10 * extra
+
+    # ==========================
+    # Isolated pawns
+    # ==========================
+
+    for col in range(8):
+
+        if white_pawn_files[col] > 0:
+
+            left_has_pawn = (
+                col > 0
+                and white_pawn_files[col - 1] > 0
+            )
+
+            right_has_pawn = (
+                col < 7
+                and white_pawn_files[col + 1] > 0
+            )
+
+            if not left_has_pawn and not right_has_pawn:
+                score -= 10
+
+        if black_pawn_files[col] > 0:
+
+            left_has_pawn = (
+                col > 0
+                and black_pawn_files[col - 1] > 0
+            )
+
+            right_has_pawn = (
+                col < 7
+                and black_pawn_files[col + 1] > 0
+            )
+
+            if not left_has_pawn and not right_has_pawn:
+                score += 10
+
+    # ==========================
+    # Passed pawns
+    # ==========================
+
+    for row in range(8):
+        for col in range(8):
+
+            # --------------------------
+            # White pawn
+            # --------------------------
+
+            if board[row][col] == "P":
+
+                passed = True
+
+                # Black pawns must not exist
+                # ahead on the same or adjacent files.
+                for check_col in range(
+                    max(0, col - 1),
+                    min(8, col + 2)
+                ):
+
+                    for check_row in range(0, row):
+
+                        if board[
+                            check_row
+                        ][
+                            check_col
+                        ] == "p":
+
+                            passed = False
+                            break
+
+                    if not passed:
+                        break
+
+                if passed:
+                    score += 20
+
+            # --------------------------
+            # Black pawn
+            # --------------------------
+
+            elif board[row][col] == "p":
+
+                passed = True
+
+                # White pawns must not exist
+                # ahead on the same or adjacent files.
+                for check_col in range(
+                    max(0, col - 1),
+                    min(8, col + 2)
+                ):
+
+                    for check_row in range(
+                        row + 1,
+                        8
+                    ):
+
+                        if board[
+                            check_row
+                        ][
+                            check_col
+                        ] == "P":
+
+                            passed = False
+                            break
+
+                    if not passed:
+                        break
+
+                if passed:
+                    score -= 20
+
+    return score
+
+
 def evaluate_board(board_obj):
 
     board = board_obj.board
@@ -380,5 +531,12 @@ def evaluate_board(board_obj):
         )
 
     score += mobility_score
+    # ==========================
+    # PAWN STRUCTURE
+    # ==========================
+
+    score += evaluate_pawn_structure(
+        board_obj
+    )
 
     return score
