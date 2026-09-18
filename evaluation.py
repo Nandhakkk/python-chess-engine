@@ -416,6 +416,100 @@ def evaluate_pawn_structure(board_obj):
     return score
 
 
+def evaluate_king_safety(board_obj):
+
+    board = board_obj.board
+    score = 0
+
+    # ==========================
+    # Find kings
+    # ==========================
+
+    white_king = None
+    black_king = None
+
+    for row in range(8):
+        for col in range(8):
+
+            if board[row][col] == "K":
+                white_king = (row, col)
+
+            elif board[row][col] == "k":
+                black_king = (row, col)
+
+    # ==========================
+    # White king safety
+    # ==========================
+
+    if white_king is not None:
+
+        king_row, king_col = white_king
+
+        # Castled position
+        if (
+            king_row == 7
+            and king_col in (6, 2)
+        ):
+            score += 20
+
+        # Pawn shield
+        if king_row == 7:
+
+            shield_row = 6
+
+            for col in range(
+                max(0, king_col - 1),
+                min(8, king_col + 2)
+            ):
+
+                if board[shield_row][col] == "P":
+                    score += 8
+                else:
+                    score -= 4
+
+        # King moved away from starting square
+        elif king_row != 7:
+
+            score -= 10
+
+    # ==========================
+    # Black king safety
+    # ==========================
+
+    if black_king is not None:
+
+        king_row, king_col = black_king
+
+        # Castled position
+        if (
+            king_row == 0
+            and king_col in (6, 2)
+        ):
+            score -= 20
+
+        # Pawn shield
+        if king_row == 0:
+
+            shield_row = 1
+
+            for col in range(
+                max(0, king_col - 1),
+                min(8, king_col + 2)
+            ):
+
+                if board[shield_row][col] == "p":
+                    score -= 8
+                else:
+                    score += 4
+
+        # King moved away from starting square
+        elif king_row != 0:
+
+            score += 10
+
+    return score
+
+
 def evaluate_board(board_obj):
 
     board = board_obj.board
@@ -538,5 +632,11 @@ def evaluate_board(board_obj):
     score += evaluate_pawn_structure(
         board_obj
     )
+    # ==========================
+    # KING SAFETY
+    # ==========================
 
+    score += evaluate_king_safety(
+        board_obj
+    )
     return score
